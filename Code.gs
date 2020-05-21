@@ -18,10 +18,14 @@
  * Change these to match the column names you are using for email
  * recepient addresses and email sent column.
 */
-const METADATA_SHEET = "Metadata";
-const EMAIL_SHEET = "Emails";
+var METADATA_SHEET = "Metadata";
+var EMAIL_SHEET = "Form responses 1";
 
-// Metadata fields
+// GLOBALS - Metadata fields
+const STATUS_COL = "Status";
+const SCHEDULE_SEND_COL = "Schedule Send";
+const MERGE_SHEET_COL = "Merge Sheet Name";
+const SEARCH_RESTRICTIONS_COL = "Search Restrictions";
 const SEARCH_SUBJECT_LINE_COL = "Search Subject Line";
 const TEMPLATE_SUBJECT_LINE_COL = "Template Subject Line";
 const SENDER_NAME_COL = "Sender Name";
@@ -29,10 +33,9 @@ const REPLY_TO_COL = "Reply To";
 const BCC_COL = "BCC";
 const CC_COL = "CC";
 const DEBUG_TO_COL = "Debug To";
-const SEARCH_RESTRICTIONS_COL = "Search Restrictions";
 
-// Email/Form fields
-const RECIPIENT_COL  = "Recipient";
+// GLOBALS - Email/Form fields
+const RECIPIENT_EMAIL_ADDRESS_COL  = "Recipient Email Address";
 const EMAIL_SENT_COL = "Email Sent";
 
 /**
@@ -56,16 +59,20 @@ function sendEmails(sheet = SpreadsheetApp.getActive().getSheetByName(EMAIL_SHEE
   // attempt to retrieve metadata
   var metadataSheet = SpreadsheetApp.getActive().getSheetByName(METADATA_SHEET)
   if (metadataSheet == null) {
-    throw new Error("Oops - can't find metadata sheet '" + METADATA_SHEET + "'. Check your constants.");
+    throw new Error("Can't find metadata sheet '" + METADATA_SHEET + "'. Check your constants.");
   }
 
   // get the data from the passed sheet
   const metadataRange = metadataSheet.getDataRange();
   const metadata = metadataRange.getDisplayValues();
 
-  // assuming Row 1 contains our column headings; changes metadata var
+  // assuming Row 1 contains our column headings; changes `metadata` var
   const metaheads = metadata.shift();
 
+  var status = metadata[0][metaheads.indexOf(STATUS_COL)];
+  var scheduleSend = metadata[0][metaheads.indexOf(SCHEDULE_SEND_COL)];
+  var mergeSheet = metadata[0][metaheads.indexOf(MERGE_SHEET_COL)];
+  var searchRestrictions = metadata[0][metaheads.indexOf(SEARCH_RESTRICTIONS_COL)];
   var searchSubjectLine = metadata[0][metaheads.indexOf(SEARCH_SUBJECT_LINE_COL)];
   var templateSubjectLine = metadata[0][metaheads.indexOf(TEMPLATE_SUBJECT_LINE_COL)];
   var debugTo = metadata[0][metaheads.indexOf(DEBUG_TO_COL)];
@@ -75,10 +82,12 @@ function sendEmails(sheet = SpreadsheetApp.getActive().getSheetByName(EMAIL_SHEE
   var cc = metadata[0][metaheads.indexOf(CC_COL)];
 
   var debug = false;
-  if (debugTo != null && debugTo != "FALSE" && debugTo != "") { debug = true; }
+  if (debugTo != "FALSE" && debugTo != "") { debug = true; }
 
-  // get the draft Gmail message to use as a template
-  const emailTemplate = getGmailTemplateFromDrafts_(searchSubjectLine);
+  // get the Gmail message to use as a template
+  var searchString = "subject:\"" + searchSubjectLine + "\"";
+  if (searchRestrictions != "") { searchString += " " + searchRestrictions; }
+  const emailTemplate = getGmailTemplateFromMail_(searchString);
 
   // get the data from the passed sheet
   const dataRange = sheet.getDataRange();
@@ -103,30 +112,37 @@ function sendEmails(sheet = SpreadsheetApp.getActive().getSheetByName(EMAIL_SHEE
   const out = [];
 
   // loop through all the rows of data
+  var num_success = 0;
+  var num_total = 0;
+
+  // SpreadsheetApp.getUi().alert("bcc:\"" + bcc + "\"");
+
   obj.forEach(function(row, rowIdx){
     // only send emails is email_sent cell is blank and not hidden by filter
     if (row[EMAIL_SENT_COL] == ''){
       try {
         var msgObj = fillInTemplateFromObject_(emailTemplate.message, row);
         var subjectString = fillInTemplateFromObject_(templateSubjectLine, row);
+        if (templateSubjectLine == "") { subjectString = searchSubjectLine; }
         if (debug) { subjectString = "[DEBUGGING] " + subjectString; }
 
         // See documentation for message options: https://developers.google.com/apps-script/reference/mail/mail-app#advanced-parameters_1
         var msgOptionsHash = {};
         msgOptionsHash['htmlBody'] = msgObj.html;
         msgOptionsHash['attachments'] = emailTemplate.attachments;
-        if (name != null && name != "") { msgOptionsHash['name'] = name; }
-        if (cc != null && cc != "") { msgOptionsHash['cc'] = cc; }
-        if (bcc != null && bcc != "") { msgOptionsHash['bcc'] = bcc; }
-        if (replyTo != null && replyTo != "") { msgOptionsHash['replyTo'] = replyTo; }
+        if (name != "") { msgOptionsHash['name'] = name; }
+        if (cc != "") { msgOptionsHash['cc'] = cc; }
+        if (bcc != "") { msgOptionsHash['bcc'] = bcc; }
+        if (replyTo != "") { msgOptionsHash['replyTo'] = replyTo; }
 
         // Use MailApp (over GmailApp) that allows sending of Emojis.
         // See https://developers.google.com/apps-script/reference/mail/mail-app
-        // GmailApp.sendEmail(row[RECIPIENT_COL], subjectString, msgObj.text, msgOptionsHash)
-        MailApp.sendEmail(row[RECIPIENT_COL], subjectString, msgObj.text, msgOptionsHash)
+        // GmailApp.sendEmail(row[RECIPIENT_EMAIL_ADDRESS_COL], subjectString, msgObj.text, msgOptionsHash)
+        MailApp.sendEmail(row[RECIPIENT_EMAIL_ADDRESS_COL], subjectString, msgObj.text, msgOptionsHash)
 
         // modify cell to record email sent date
         out.push([new Date()]);
+        num_success++;
       } catch(e) {
         // modify cell to record error
         out.push([e.message]);
@@ -134,30 +150,39 @@ function sendEmails(sheet = SpreadsheetApp.getActive().getSheetByName(EMAIL_SHEE
     } else {
       out.push([row[EMAIL_SENT_COL]]);
     }
+    num_total++;
   });
 
   // updating the sheet with new data
   sheet.getRange(2, emailSentColIdx+1, out.length).setValues(out);
+
+  // report stats to user
+  if (debug) { SpreadsheetApp.getUi().alert("Sent Emails: " + num_success + "\nTotal Lines Seen: " + num_total); }
+
+  /** Helper functions below **/
 
   /**
    * Get a Gmail draft message by matching the subject line.
    * @param {string} subject_line to search for draft message
    * @return {object} containing the subject, plain and html message body and attachments
   */
-  function getGmailTemplateFromDrafts_(subject_line){
+  function getGmailTemplateFromMail_(search_string){
     try {
-      // get drafts
-      const drafts = GmailApp.getDrafts();
-      // filter the drafts that match subject line
-      const draft = drafts.filter(subjectFilter_(subject_line))[0];
-      // get the message object
-      const msg = draft.getMessage();
-      // getting attachments so they can be included in the merge
+      // Retrieve all threads of the specified label
+      var threads = GmailApp.search(search_string);
+      if (debug) { SpreadsheetApp.getUi().alert("search string: " + search_string); }
+
+      // Retrieve the first message of the first thread
+      if (threads.length != 1) { throw new Error("Wrong number (" + threads.length + ") of matching threads, should be just 1 (unique)"); }
+      var messages = threads[0].getMessages();
+      if (threads.length != 1) { throw new Error("Wrong number (" + messages.length + ") of matching messages, should be just 1 (unique)"); }
+      var msg = messages[0];
+
       const attachments = msg.getAttachments();
-      return {message: {subject: subject_line, text: msg.getPlainBody(), html:msg.getBody()},
+      return {message: {subject: msg.getSubject(), text: msg.getPlainBody(), html:msg.getBody()},
               attachments: attachments};
     } catch(e) {
-      throw new Error("Oops - can't find Gmail draft");
+      throw(e);
     }
 
     /**
@@ -194,6 +219,10 @@ function sendEmails(sheet = SpreadsheetApp.getActive().getSheetByName(EMAIL_SHEE
   }
 }
 
+/**
+* Populates a dialog box with the information about amount of email allowed to send
+*/
 function checkQuota() {
-
+  var emailQuotaRemaining = MailApp.getRemainingDailyQuota();
+  SpreadsheetApp.getUi().alert("Remaining email quota (refreshes daily): " + emailQuotaRemaining);
 }
