@@ -185,20 +185,6 @@ function sendEmails(sheet = SpreadsheetApp.getActive().getSheetByName(EMAIL_SHEE
       throw(e);
     }
 
-    /**
-     * Filter draft objects with the matching subject linemessage by matching the subject line.
-     * @param {string} subject_line to search for draft message
-     * @return {object} GmailDraft object
-    */
-    function subjectFilter_(search_subject_line){
-      return function(element) {
-        if (element.getMessage().getSubject() === search_subject_line) {
-          return element;
-        }
-      }
-    }
-  }
-
   /**
    * Fill template string with data object
    * @see https://stackoverflow.com/a/378000/1027723
