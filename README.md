@@ -15,8 +15,12 @@ https://github.com/gsuitedevs/solutions/tree/master/mail-merge
 * It adds a debugging variable which should send the email only to a debugging email address.
 * It can customize the subject line, feeding the subject line through the mail merge variable replacement process,
 
-BUG: BCC doesn't seem to work currently.
-BUG: Scheduled sending and multiple merges in the works.
-BUG: Needs better installation instructions.
 
 This can be useful for connecting with Google Form output, where responses come in a separate "Form Responses 1" sheet.
+
+## Known Bugs
+* BCC doesn't seem to work currently.
+
+## Development Plans
+* Scheduled sending and multiple merges in the works.
+* Needs better installation instructions.
