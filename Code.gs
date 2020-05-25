@@ -19,7 +19,7 @@
  * recepient addresses and email sent column.
 */
 var METADATA_SHEET = "Metadata";
-var EMAIL_SHEET = "Form responses 1";
+var EMAIL_SHEET = "Form responses 1"; // default value
 
 // GLOBALS - Metadata fields
 const STATUS_COL = "Status";
@@ -51,13 +51,11 @@ function onOpen() {
 
 /**
  * Send emails from sheet data.
- * @param {string} subjectLine (optional) for the email draft message
- * @param {Sheet} sheet to read data from
+ * @param {metadataSheet}: sheet to read data from
 */
-function sendEmails(sheet = SpreadsheetApp.getActive().getSheetByName(EMAIL_SHEET)) {
+function sendEmails(metadataSheet = SpreadsheetApp.getActive().getSheetByName(METADATA_SHEET)) {
 
   // attempt to retrieve metadata
-  var metadataSheet = SpreadsheetApp.getActive().getSheetByName(METADATA_SHEET)
   if (metadataSheet == null) {
     throw new Error("Can't find metadata sheet '" + METADATA_SHEET + "'. Check your constants.");
   }
@@ -89,7 +87,12 @@ function sendEmails(sheet = SpreadsheetApp.getActive().getSheetByName(EMAIL_SHEE
   if (searchRestrictions != "") { searchString += " " + searchRestrictions; }
   const emailTemplate = getGmailTemplateFromMail_(searchString);
 
-  // get the data from the passed sheet
+  // get the data from the address sheet
+  sheet = SpreadsheetApp.getActive().getSheetByName(mergeSheet);
+  if (sheet == null) {
+    throw new Error("Can't find mail merge sheet '" + mergeSheet + "'. Check your metadata constants.");
+  }
+
   const dataRange = sheet.getDataRange();
   // Fetch displayed values for each row in the Range HT Andrew Roberts
   // https://mashe.hawksey.info/2020/04/a-bulk-email-mail-merge-with-gmail-and-google-sheets-solution-evolution-using-v8/#comment-187490
@@ -110,6 +113,7 @@ function sendEmails(sheet = SpreadsheetApp.getActive().getSheetByName(EMAIL_SHEE
 
   // used to record sent emails
   const out = [];
+  const metadataOut = [];
 
   // loop through all the rows of data
   var num_success = 0;
@@ -153,13 +157,16 @@ function sendEmails(sheet = SpreadsheetApp.getActive().getSheetByName(EMAIL_SHEE
     num_total++;
   });
 
-  // updating the sheet with new data
+  // updating the mail merge sheet with new data
   sheet.getRange(2, emailSentColIdx+1, out.length).setValues(out);
 
-  // report stats to user
+  // report stats to user, update the metadatasheet with output
   if (debug) { SpreadsheetApp.getUi().alert("Sent Emails: " + num_success + "\nTotal Lines Seen: " + num_total); }
+  metadataOut.push(["" + Date() + "\nSent Emails: " + num_success + "\nTotal Lines Seen: " + num_total]);
+  if (debug) { SpreadsheetApp.getUi().alert(metadataOut[0]); }
+  metadataSheet.getRange(2, metaheads.indexOf(STATUS_COL)+1,1).setValues(metadataOut);
 
-  /** Helper functions below **/
+  /** HELPER FUNCTIONS BELOW ************/
 
   /**
    * Get a Gmail draft message by matching the subject line.
