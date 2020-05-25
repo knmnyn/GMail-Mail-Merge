@@ -184,6 +184,7 @@ function sendEmails(sheet = SpreadsheetApp.getActive().getSheetByName(EMAIL_SHEE
     } catch(e) {
       throw(e);
     }
+  }
 
   /**
    * Fill template string with data object
