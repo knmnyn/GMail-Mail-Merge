@@ -45,7 +45,7 @@ function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Mail Merge')
       .addItem('Check Quota', 'checkQuota')
-      .addItem('Send Emails From Specific Row in Metadata Sheet', 'sendEmailsFromRow')
+      .addItem('Run Specific Row Mail Merge', 'sendEmailsFromRow')
       .addItem('Send Scheduled Emails', 'sendScheduledEmails')
       .addToUi();
 }
