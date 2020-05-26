@@ -35,8 +35,8 @@ const CC_COL = "CC";
 const DEBUG_TO_COL = "Debug To";
 
 // GLOBALS - Email/Form fields
-const RECIPIENT_EMAIL_ADDRESS_COL  = "Recipient Email Address";
 const EMAIL_SENT_COL = "Email Sent";
+const RECIPIENT_EMAIL_ADDRESS_COL  = "Recipient Email Address";
 
 /**
  * Creates the menu item "Mail Merge" for user to run scripts on drop-down.
@@ -213,13 +213,18 @@ function sendEmailsFromMetadata(metadataSheet = SpreadsheetApp.getActive().getSh
             debugMsg = "Debugging Run\n";
           }
 
+//          SpreadsheetApp.getUi().alert("CC: " + msgOptionsHash['cc'] + "\nlocalCC: " + row[CC_COL]);
+
           // See documentation for message options: https://developers.google.com/apps-script/reference/mail/mail-app#advanced-parameters_1
           msgOptionsHash['htmlBody'] = msgObj.html;
           msgOptionsHash['attachments'] = emailTemplate.attachments;
-          // if (name != "") { msgOptionsHash['name'] = name; }
-          // if (cc != "") { msgOptionsHash['cc'] = cc; }
+          if (row[SENDER_NAME_COL] != "") { msgOptionsHash['name'] = row[SENDER_NAME_COL]; }
+          if (row[REPLY_TO_COL] != "") { msgOptionsHash['replyTo'] = row[REPLY_TO_COL]; }
+          if (row[CC_COL] != "") {
+            if (msgOptionsHash['cc'] != "") { msgOptionsHash['cc'] = msgOptionsHash['cc'] + ", " + row[CC_COL]; } // append
+            else { msgOptionsHash['cc'] = row[CC_COL]; } // overwrite
+          }
           // if (bcc != "") { msgOptionsHash['bcc'] = bcc; }
-          // if (replyTo != "") { msgOptionsHash['replyTo'] = replyTo; }
 
           // Use MailApp (over GmailApp) that allows sending of Emojis.
           // See https://developers.google.com/apps-script/reference/mail/mail-app
