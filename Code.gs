@@ -30,7 +30,7 @@ const SEARCH_SUBJECT_LINE_COL = "Search Subject Line";
 const TEMPLATE_SUBJECT_LINE_COL = "Template Subject Line";
 const SENDER_NAME_COL = "Sender Name";
 const REPLY_TO_COL = "Reply To";
-const BCC_COL = "BCC";
+const BCC_COL = "BCC";                     // [BUG] doesn't work
 const CC_COL = "CC";
 const DEBUG_TO_COL = "Debug To";
 
@@ -45,15 +45,26 @@ function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Mail Merge')
       .addItem('Check Quota', 'checkQuota')
-      .addItem('Send Emails', 'sendEmails')
+      .addItem('Send Emails', 'sendEmailsFromMetadata')
+      .addItem('Send Scheduled Emails', 'sendScheduledEmails')
       .addToUi();
+}
+
+/**
+ * Send scheduled emails only.
+ * Uses overloaded sentEmailsFromMetadata() to run with sendScheduled flag set to 'true'
+ *
+ * @param {metadataSheet}: sheet to read data from
+*/
+function sendScheduledEmails(metadataSheet = SpreadsheetApp.getActive().getSheetByName(METADATA_SHEET)) {
+  sendEmailsFromMetadata(metadataSheet,true);
 }
 
 /**
  * Send emails from sheet data.
  * @param {metadataSheet}: sheet to read data from
 */
-function sendEmails(metadataSheet = SpreadsheetApp.getActive().getSheetByName(METADATA_SHEET)) {
+function sendEmailsFromMetadata(metadataSheet = SpreadsheetApp.getActive().getSheetByName(METADATA_SHEET), sendScheduled = false) {
 
   // attempt to retrieve metadata
   if (metadataSheet == null) {
@@ -121,6 +132,8 @@ function sendEmails(metadataSheet = SpreadsheetApp.getActive().getSheetByName(ME
 
   // SpreadsheetApp.getUi().alert("bcc:\"" + bcc + "\"");
 
+  var debugMsg = "";
+  var debugCount = 0;
   obj.forEach(function(row, rowIdx){
     // only send emails is email_sent cell is blank and not hidden by filter
     if (row[EMAIL_SENT_COL] == ''){
@@ -128,7 +141,10 @@ function sendEmails(metadataSheet = SpreadsheetApp.getActive().getSheetByName(ME
         var msgObj = fillInTemplateFromObject_(emailTemplate.message, row);
         var subjectString = fillInTemplateFromObject_(templateSubjectLine, row);
         if (templateSubjectLine == "") { subjectString = searchSubjectLine; }
-        if (debug) { subjectString = "[DEBUGGING] " + subjectString; }
+        if (debug) {
+          subjectString = "[DEBUGGING] " + subjectString;
+          debugMsg = "Debugging Run\n";
+        }
 
         // See documentation for message options: https://developers.google.com/apps-script/reference/mail/mail-app#advanced-parameters_1
         var msgOptionsHash = {};
@@ -141,15 +157,22 @@ function sendEmails(metadataSheet = SpreadsheetApp.getActive().getSheetByName(ME
 
         // Use MailApp (over GmailApp) that allows sending of Emojis.
         // See https://developers.google.com/apps-script/reference/mail/mail-app
+        if (debug) {
+          if (debugCount == 0) {
+            MailApp.sendEmail(debugTo, subjectString, msgObj.text, msgOptionsHash);
+           }
+           debugCount = 1;
+        } else {
         // GmailApp.sendEmail(row[RECIPIENT_EMAIL_ADDRESS_COL], subjectString, msgObj.text, msgOptionsHash)
-        MailApp.sendEmail(row[RECIPIENT_EMAIL_ADDRESS_COL], subjectString, msgObj.text, msgOptionsHash)
+          MailApp.sendEmail(row[RECIPIENT_EMAIL_ADDRESS_COL], subjectString, msgObj.text, msgOptionsHash)
+        }
 
         // modify cell to record email sent date
-        out.push([new Date()]);
+        out.push([debugMsg + new Date()]);
         num_success++;
       } catch(e) {
         // modify cell to record error
-        out.push([e.message]);
+        out.push([debugMsg + e.message]);
       }
     } else {
       out.push([row[EMAIL_SENT_COL]]);
@@ -161,16 +184,110 @@ function sendEmails(metadataSheet = SpreadsheetApp.getActive().getSheetByName(ME
   sheet.getRange(2, emailSentColIdx+1, out.length).setValues(out);
 
   // report stats to user, update the metadatasheet with output
-  if (debug) { SpreadsheetApp.getUi().alert("Sent Emails: " + num_success + "\nTotal Lines Seen: " + num_total); }
-  metadataOut.push(["" + Date() + "\nSent Emails: " + num_success + "\nTotal Lines Seen: " + num_total]);
-  if (debug) { SpreadsheetApp.getUi().alert(metadataOut[0]); }
+  metadataOut.push([debugMsg + Date() + "\nSent Emails: " + num_success + "\nTotal Lines Seen: " + num_total]);
   metadataSheet.getRange(2, metaheads.indexOf(STATUS_COL)+1,1).setValues(metadataOut);
+  if (debug) { SpreadsheetApp.getUi().alert(metadataOut[0]); }
 
   /** HELPER FUNCTIONS BELOW ************/
 
   /**
-   * Get a Gmail draft message by matching the subject line.
-   * @param {string} subject_line to search for draft message
+   * Helper function to send emails according to a merge sheet.
+   * @param {mergeSheet}: the worksheet that contains the merge email information
+   * @param {emailTemplate}: the template to use to send the message, after
+   * @param {msgHash}: partially filled-out messageHash that contains all options that are common to all emails for this function call
+   * @param {debug}: Boolean flag to declare whether debugging or not
+   *
+   * @return: overall status string for the email send.
+  */
+  function sendEmails_(mergeSheet, emailTemplate, msgOptionHash = {}, debug = false) {
+  // get the data from the address sheet
+    sheet = SpreadsheetApp.getActive().getSheetByName(mergeSheet);
+    if (sheet == null) {
+      throw new Error("Can't find mail merge sheet '" + mergeSheet + "'. Check your metadata constants.");
+    }
+
+    const dataRange = sheet.getDataRange();
+    // Fetch displayed values for each row in the Range HT Andrew Roberts
+    // https://mashe.hawksey.info/2020/04/a-bulk-email-mail-merge-with-gmail-and-google-sheets-solution-evolution-using-v8/#comment-187490
+    // @see https://developers.google.com/apps-script/reference/spreadsheet/range#getdisplayvalues
+    const data = dataRange.getDisplayValues();
+
+    // assuming row 1 contains our column headings
+    const heads = data.shift();
+
+    // get the index of column named 'Email Status' (or equivalent as set by constant; assume header names are unique)
+    // @see http://ramblings.mcpher.com/Home/excelquirks/gooscript/arrayfunctions
+    const emailSentColIdx = heads.indexOf(EMAIL_SENT_COL);
+
+    // convert 2d array into object array
+    // @see https://stackoverflow.com/a/22917499/1027723
+    // for pretty version see https://mashe.hawksey.info/?p=17869/#comment-184945
+    const obj = data.map(r => (heads.reduce((o, k, i) => (o[k] = r[i] || '', o), {})));
+
+    // used to record sent emails
+    const out = [];
+    const metadataOut = [];
+
+    // loop through all the rows of data
+    var numSuccess = 0;
+    var numTotal = 0;
+    var debugMsg = "";
+    var debugCount = 0;
+    obj.forEach(function(row, rowIdx){
+      // only send emails is email_sent cell is blank and not hidden by filter
+      if (row[EMAIL_SENT_COL] == ''){
+        try {
+          var msgObj = fillInTemplateFromObject_(emailTemplate.message, row);
+          var subjectString = fillInTemplateFromObject_(templateSubjectLine, row);
+          if (templateSubjectLine == "") { subjectString = searchSubjectLine; }
+          if (debug) {
+            subjectString = "[DEBUGGING] " + subjectString;
+            debugMsg = "Debugging Run\n";
+          }
+
+          // See documentation for message options: https://developers.google.com/apps-script/reference/mail/mail-app#advanced-parameters_1
+          msgOptionsHash['htmlBody'] = msgObj.html;
+          msgOptionsHash['attachments'] = emailTemplate.attachments;
+          // if (name != "") { msgOptionsHash['name'] = name; }
+          // if (cc != "") { msgOptionsHash['cc'] = cc; }
+          // if (bcc != "") { msgOptionsHash['bcc'] = bcc; }
+          // if (replyTo != "") { msgOptionsHash['replyTo'] = replyTo; }
+
+          // Use MailApp (over GmailApp) that allows sending of Emojis.
+          // See https://developers.google.com/apps-script/reference/mail/mail-app
+          if (debug) {
+            if (debugCount == 0) {
+              MailApp.sendEmail(debugTo, subjectString, msgObj.text, msgOptionsHash);
+             }
+             debugCount = 1;
+          } else {
+            // GmailApp.sendEmail(row[RECIPIENT_EMAIL_ADDRESS_COL], subjectString, msgObj.text, msgOptionsHash)
+            MailApp.sendEmail(row[RECIPIENT_EMAIL_ADDRESS_COL], subjectString, msgObj.text, msgOptionsHash)
+          }
+
+          // modify cell to record email sent date
+          out.push([debugMsg + new Date()]);
+          numSuccess++;
+        } catch(e) {
+          // modify cell to record error
+          out.push([debugMsg + e.message]);
+        }
+      } else {
+        out.push([row[EMAIL_SENT_COL]]);
+      }
+      numTotal++;
+    });
+
+    // updating the mail merge sheet with new data
+    sheet.getRange(2, emailSentColIdx+1, out.length).setValues(out);
+
+    // return the mailing status to the caller, as an array of size 1
+    return ([debugMsg + Date() + "\nSent Emails: " + numSuccess + "\nTotal Lines Seen: " + numTotal]);
+  }
+
+  /**
+   * Get a Gmail message by matching the subject line.
+   * @param {string} subject_line to search for message
    * @return {object} containing the subject, plain and html message body and attachments
   */
   function getGmailTemplateFromMail_(search_string){
