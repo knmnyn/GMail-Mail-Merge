@@ -21,7 +21,7 @@ https://github.com/gsuitedevs/solutions/tree/master/mail-merge
 * Local (per email) merge sheet overrides of values from the metadata sheet, for "CC" (appends), "Reply To" and "Sender Name" columns.
 
 ## Try it
-Create a copy of the sample Gmail/Sheets Mail Merge spreadsheet.
+Create a copy of the sample [Gmail Mail Merge++](https://docs.google.com/spreadsheets/d/11dS1-kunj-sHA49WVtyACIqmCYOGn3Y5N1lIPPIQZoU/edit?usp=sharing) spreadsheet.
 
 Update the **Recipient Email Address** in the column with email addresses you would like to use in the mail merge in the **Mail Merge** sheet.
 
