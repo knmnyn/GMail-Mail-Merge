@@ -20,6 +20,27 @@ https://github.com/gsuitedevs/solutions/tree/master/mail-merge
 * It can customize the subject line, feeding the subject line through the mail merge variable replacement process.
 * Local (per email) merge sheet overrides of values from the metadata sheet, for "CC" (appends), "Reply To" and "Sender Name" columns.
 
+## Try it
+Create a copy of the sample Gmail/Sheets Mail Merge spreadsheet.
+
+Update the **Recipient Email Address** in the column with email addresses you would like to use in the mail merge in the **Mail Merge** sheet.
+
+Create a message in your Gmail account using markers like `{{First name}}`, which correspond to column names, to indicate text you’d like to be replaced with data from the copied spreadsheet.
+
+In the **Metadata** worksheet, specify the template email (commonly in Drafts, specified by `in:draft` using the **Search Restriction** and the **Search Subject Line**) that you want to use a source for the mass mailing.
+
+In the copied spreadsheet, click on custom menu item `Mail Merge` > `Run Specific Row Mail Merge`.  For example, to run the example mail merge partially completed, type `2`. 
+
+A dialog box will appear and tell you that the script requires authorization. Read the authorization notice and continue.
+
+The Email Sent column will update with the message status, in both the **Metadata** and **Mail Merge** sheets.
+
+## Next steps
+
+Additional columns can be added to the spreadsheet with other data you would like to use. Using the `{{}}` annotation and including your column name as part of your Gmail draft will allow you to include other data from your spreadsheet. If you change the name of the Recipient or Email Sent columns this will need to be updated by opening `Tools` > `Script Editor`.
+
+The source code includes a number of additional parameters, currently commented out, which can be used to control the name of the account email is sent from, reply to email addresses, as well as bcc and cc'd email addresses. If you would like to find out more about the features of this solution including some modifications you can make for additional functionality like setting up scheduled sending here is a related blog post.
+
 ## Known Bugs
 * BCC doesn't seem to work currently.
 
