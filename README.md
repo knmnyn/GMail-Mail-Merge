@@ -41,6 +41,11 @@ The script also has the function to send scheduled emails, so that you can plan 
 
 To enable this, you must install an Installable Trigger to the script and specify the `sendScheduledEmails` as the target.  You can set the trigger as you like; for example to check on an hourly basis, follow the set of images below.  
 
+![Step 1.](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Step 1")
+![Step 2.](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Step 2")
+![Step 3.](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Step 3")
+
+
 ## Next steps
 
 Additional columns can be added to the spreadsheet with other data you would like to use. Using the `{{}}` annotation and including your column name as part of your Gmail draft will allow you to include other data from your spreadsheet. If you change the name of the Recipient or Email Sent columns this will need to be updated by opening `Tools` > `Script Editor`.
