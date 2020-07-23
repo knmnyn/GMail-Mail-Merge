@@ -39,7 +39,7 @@ The Email Sent column will update with the message status, in both the **Metadat
 
 Additional columns can be added to the spreadsheet with other data you would like to use. Using the `{{}}` annotation and including your column name as part of your Gmail draft will allow you to include other data from your spreadsheet. If you change the name of the Recipient or Email Sent columns this will need to be updated by opening `Tools` > `Script Editor`.
 
-The source code includes a number of additional parameters, currently commented out, which can be used to control the name of the account email is sent from, reply to email addresses, as well as bcc and cc'd email addresses. If you would like to find out more about the features of this solution including some modifications you can make for additional functionality like setting up scheduled sending here is a related blog post.
+The source code includes a number of additional parameters, currently commented out, which can be used to control the name of the account email is sent from, reply to email addresses, as well as bcc and cc'd email addresses. 
 
 ## Enabling Scheduled Sending
 
