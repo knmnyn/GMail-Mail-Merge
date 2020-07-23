@@ -35,6 +35,12 @@ A dialog box will appear and tell you that the script requires authorization. Re
 
 The Email Sent column will update with the message status, in both the **Metadata** and **Mail Merge** sheets.
 
+## Enabling Scheduled Sending
+
+The script also has the function to send scheduled emails, so that you can plan your mass customized mailings in advance.  You need to specific a date/time correctly in the **Schedule Send** column in the **Metadata** worksheet.  When the `sendScheduledEmails` function is run, any row's email whose time is in the past and whose **Status** column is not blank is run.  By default any row that has this column blank is ignored by the Scheduled Send facility.  This facility is similar to the "crontab" means in Un\*x.  You can also trigger this function directly 
+
+To enable this, you must install an Installable Trigger to the script and specify the `sendScheduledEmails` as the target.  You can set the trigger as you like; for example to check on an hourly basis, follow the set of images below.  
+
 ## Next steps
 
 Additional columns can be added to the spreadsheet with other data you would like to use. Using the `{{}}` annotation and including your column name as part of your Gmail draft will allow you to include other data from your spreadsheet. If you change the name of the Recipient or Email Sent columns this will need to be updated by opening `Tools` > `Script Editor`.
