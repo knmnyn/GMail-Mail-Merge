@@ -41,9 +41,9 @@ The script also has the function to send scheduled emails, so that you can plan 
 
 To enable this, you must install an Installable Trigger to the script and specify the `sendScheduledEmails` as the target.  You can set the trigger as you like; for example to check on an hourly basis, follow the set of images below.  
 
-![Step 1.](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Step 1")
-![Step 2.](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Step 2")
-![Step 3.](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Step 3")
+![Step 1.](https://github.com/knmnyn/GMail-Mail-Merge/raw/master/src/common/images/icon48.png "Step 1")
+![Step 2.](https://github.com/knmnyn/GMail-Mail-Merge/blob/master/trigger-install-2.png "Specify the interval and logging.")
+![Step 3.](https://github.com/knmnyn/GMail-Mail-Merge/blob/master/trigger-install-3.png "Trigger installed!")
 
 
 ## Next steps
