@@ -18,7 +18,7 @@
  * Change these to match the column names you are using for email
  * recepient addresses and email sent column.
 */
-const SPREADSHEET_ID = "1rqG7U4gcNIEWLbFZiHuKEKU4YsMhHx2aB5zcjuO5Ea0"; // Update this to the correct Spreadsheet ID to enable scheduled send; also replace in sendScheduledEmails()
+const SPREADSHEET_ID = "11dS1-kunj-sHA49WVtyACIqmCYOGn3Y5N1lIPPIQZoU"; // Update this to the correct Spreadsheet ID to enable scheduled send; also replace in sendScheduledEmails()
 const METADATA_SHEET = "Metadata";      // default value; also replace in sendScheduledEmails()
 const EMAIL_SHEET = "Form responses 1"; // default value
 
@@ -72,7 +72,7 @@ function sendEmailsFromRow(metadataSheet = SpreadsheetApp.openById(SPREADSHEET_I
  *
 */
 function sendScheduledEmails() {
-  var ss = SpreadsheetApp.openById("1rqG7U4gcNIEWLbFZiHuKEKU4YsMhHx2aB5zcjuO5Ea0"); // must replace the value for this function to work; separate trigger invocation doesn't seem to read global constants; see value at the top of the file
+  var ss = SpreadsheetApp.openById("1rqG7U4gcNIEWLbFZiHuKEKU4YsMh11dS1-kunj-sHA49WVtyACIqmCYOGn3Y5N1lIPPIQZoU"); // must replace the value for this function to work; separate trigger invocation doesn't seem to read global constants; see value at the top of the file
   var metadataSheet = ss.getSheetByName("Metadata"); // must replace the value for this function to work; separate trigger invocation doesn't seem to read global constants; see value at the top of the file
   sendEmailsFromMetadata(metadataSheet,true,-1); // not sending a specific row, but on scheduled mode
 }
