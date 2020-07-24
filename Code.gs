@@ -19,8 +19,8 @@
  * recepient addresses and email sent column.
 */
 const SPREADSHEET_ID = "11dS1-kunj-sHA49WVtyACIqmCYOGn3Y5N1lIPPIQZoU"; // Update this to the correct Spreadsheet ID to enable scheduled send; also replace in sendScheduledEmails()
-const METADATA_SHEET = "Metadata";      // default value; also replace in sendScheduledEmails()
-const EMAIL_SHEET = "Form responses 1"; // default value
+const METADATA_SHEET = "Metadata"; // default value; also replace in sendScheduledEmails()
+const EMAIL_SHEET = "Mail Merge"; // default value; if taking information from Google Forms, you may want to rename this as "Form Responses 1" or similar
 
 // GLOBALS - Metadata fields
 const STATUS_COL = "Status";
