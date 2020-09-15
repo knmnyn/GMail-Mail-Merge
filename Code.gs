@@ -1,5 +1,5 @@
 /** Copyright Martin Hawksey 2020
- * Modified by Min-Yen KAN (2020) <knmnyn@comp.nus.edu.sg>
+ * Modified by Min-Yen KAN (2020) <kanmy@comp.nus.edu.sg>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License.  You may obtain a copy
@@ -208,8 +208,11 @@ function sendEmailsFromMetadata(metadataSheet = SpreadsheetApp.getActive().getSh
     // used to record sent emails
     const out = [];
     const metadataOut = [];
-    const cachedCC = msgOptionsHash['cc']; // cache CC data, as it could be rewritten every time.
-
+ 
+    // cache (B)CC data, rewrite every time to allow append from global METADATA values
+    const cachedCC = msgOptionsHash['cc']; 
+    const cachedBCC = msgOptionsHash['bcc']; 
+    
     var numSuccess = 0;
     var numTotal = 0;
     var debugMsg = "";
@@ -225,22 +228,24 @@ function sendEmailsFromMetadata(metadataSheet = SpreadsheetApp.getActive().getSh
           if (debug) { 
             subjectString = "[DEBUGGING] " + subjectString; 
             debugMsg = "Debugging Run\n";
+            SpreadsheetApp.getUi().alert(rowIdx + " CC: " + msgOptionsHash['cc'] + "\nlocalCC: " + row[CC_COL]);        
           }
           
-//          SpreadsheetApp.getUi().alert("CC: " + msgOptionsHash['cc'] + "\nlocalCC: " + row[CC_COL]);     
-
           // See documentation for message options: https://developers.google.com/apps-script/reference/mail/mail-app#advanced-parameters_1
+          delete msgOptionsHash['cc']; // reset CC:s
+          delete msgOptionsHash['bcc']; // reset BCC:s
           msgOptionsHash['htmlBody'] = msgObj.html;
           msgOptionsHash['attachments'] = emailTemplate.attachments;          
           if (row[SENDER_NAME_COL] != "") { msgOptionsHash['name'] = row[SENDER_NAME_COL]; } 
           if (row[REPLY_TO_COL] != "") { msgOptionsHash['replyTo'] = row[REPLY_TO_COL]; } 
-
-          msgOptionHash['cc'] = cachedCC; // reset CC from metadata sheet
           if (row[CC_COL] != "") { 
-            if (msgOptionsHash['cc'] != "") { msgOptionsHash['cc'] = msgOptionsHash['cc'] + ", " + row[CC_COL]; } // append
+            if (msgOptionsHash['cc'] != undefined) { msgOptionsHash['cc'] = cachedCC + ", " + row[CC_COL]; } // append to existing 
             else { msgOptionsHash['cc'] = row[CC_COL]; } // overwrite
           }
-          // if (bcc != "") { msgOptionsHash['bcc'] = bcc; } 
+          if (row[BCC_COL] != "") { 
+            if (msgOptionsHash['bcc'] != undefined) { msgOptionsHash['bcc'] = cachedBCC + ", " + row[CBC_COL]; } // append to existing 
+            else { msgOptionsHash['bcc'] = row[BCC_COL]; } // overwrite
+          }
 
           // Use MailApp (over GmailApp) that allows sending of Emojis.  
           // See https://developers.google.com/apps-script/reference/mail/mail-app
