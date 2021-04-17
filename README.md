@@ -4,7 +4,7 @@ description: Yet another Gmail Mail Merge, based on the script by Martin Hawksey
 labels: Sheets, Gmail
 material_icon: merge_type
 create_time: 2020-05-22
-update_time: 2020-05-22
+update_time: 2021-04-17
 ---
 
 Yet another Gmail Mail Merge, based on the script by Martin Hawksey.
@@ -59,6 +59,7 @@ With these two steps completed, the **Send Scheduled Email** function will run a
 
 ## Known Bugs
 * BCC doesn't seem to work currently.
+* `{{token}}` replacements may have issues if they contain HTML tags.  This does work but may have issues.  We suggest piloting your merge first to check for problems before sending out an actual bulk mail. 
 
 ## Development Plans
 * Add BCC.
